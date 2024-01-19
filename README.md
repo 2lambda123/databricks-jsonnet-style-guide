@@ -6,35 +6,37 @@ Jsonnet is a language used most commonly to describe a finite number of complex,
 
 Because we are most commonly describing a finite and somewhat fixed set of resources, it is useful to think of jsonnet as code which is executed at commit time (in the code repository sense) to materialize specific resources such as Kubernetes Deployment JSONs or AWS CloudFormation templates. In this way, the materialized templates are _production code_ and source code diffing tools are _unit tests_, which means that we can be more certain in the correctness of jsonnet templates without writing specialized tests.
 
-Jsonnet is a relatively constrained language, but we have found that sometimes the most obvious way to build and extend jsonnet also leads to significant headache down the line for people to understand and extend code. We have found that the following guidelines work well for us on projects with high velocity -- depending on the needs of your team,  your mileage might vary.
+Jsonnet is a relatively constrained language, but we have found that sometimes the most obvious way to build and extend jsonnet also leads to significant headache down the line for people to understand and extend code. We have found that the following guidelines work well for us on projects with high velocity -- depending on the needs of your team, your mileage might vary.
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
 
-
 ## <a name='TOC'>Table of Contents</a>
+
 1. [Document History](#history)
 
 2. [Syntactic Style](#syntactic)
-    * [Autoformatting](#autoformatting)
-    * [Variable Declaration](#variable-declaration)
-    * [Line Length](#linelength)
-    * [Spacing and Indentation](#indent)
-    * [Blank Lines (Vertical Whitespace)](#blanklines)
+
+   - [Autoformatting](#autoformatting)
+   - [Variable Declaration](#variable-declaration)
+   - [Line Length](#linelength)
+   - [Spacing and Indentation](#indent)
+   - [Blank Lines (Vertical Whitespace)](#blanklines)
 
 3. [Defining and Using Abstractions](#abstractions)
-    * [Defining Classes](#defining-classes)
-    * [Defining Methods](#defining-methods)
-    * [Using Classes](#using-classes)
-    * [File Structure](#file-structure)
-    * [Documentation Style](#doc)
+
+   - [Defining Classes](#defining-classes)
+   - [Defining Methods](#defining-methods)
+   - [Using Classes](#using-classes)
+   - [File Structure](#file-structure)
+   - [Documentation Style](#doc)
 
 4. [Best Practices](#best-practices)
-    * [The Golden Pattern](#golden-pattern)
-    * [Parameter Objects](#parameter-objects)
-    * [Overriding and Inserting Fields](#overriding-fields)
-
+   - [The Golden Pattern](#golden-pattern)
+   - [Parameter Objects](#parameter-objects)
+   - [Overriding and Inserting Fields](#overriding-fields)
 
 ## <a name='history'>Document History</a>
+
 - 2017-06-17: Initial version.
 
 ## <a name='syntactic'>Syntactic Style</a>
@@ -49,7 +51,9 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
   ```
   local serverPort = 1000;
   local clientPort = 2000;
+  ```
 - Prefer `local` to `::` syntax for private/local variables. Unlike `::`, variables defined with `local` cannot be overridden by children, nor accessed by other files.
+
   ```
   {
     // CORRECT
@@ -62,21 +66,21 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
   }
   ```
 
-
 ### <a name='linelength'>Line Length</a>
 
 - Limit lines to 100 characters.
 - The only exceptions are import statements and URLs (although even for those, try to keep them under 100 chars).
 
-
 ### <a name='indent'>Spacing and Indentation</a>
 
 - Put one space before and after operators
+
   ```
   local c = a + b;
   ```
 
 - Put one space after commas.
+
   ```
   ["a", "b", "c"] // CORRECT
 
@@ -84,6 +88,7 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
   ```
 
 - Put one space after colons.
+
   ```
   {
     // CORRECT
@@ -94,12 +99,13 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
     // INCORRECT
     foo :: "bar",
     baz:"taz",
-    { hello : "world" }, 
+    { hello : "world" },
   ```
 
 - Use 2-space indentation in general.
 
 - Only method or class parameter declarations use 4-space indentation, to visually differentiate parameters from method body.
+
   ```
   // CORRECT
   local multiply(
@@ -110,6 +116,7 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
   ```
 
 - Do NOT use vertical alignment. They draw attention to the wrong parts of the code and make the aligned code harder to change in the future.
+
   ```
   // Don't align vertically
   local plus     = "+";
@@ -130,10 +137,10 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
 - Use one or two blank line(s) to separate class definitions.
 - Excessive number of blank lines is discouraged.
 
-
 ## <a name='abstractions'>Defining and Using Abstractions</a>
 
 ### <a name='defining-classes'>Defining Classes</a>
+
 - Rather than defining a concrete JSON file, it is often useful to define a template which takes some set of parameters before being materialized into JSON. We can liken named functions which take a set of parameters and result in a fixed scheme to "classes" in object-oriented languages, and so we will use that terminology.
 - When defining a class, use the following syntax:
   ```
@@ -155,13 +162,14 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
   local newAnimal(
       name,
       age,
-      isCat = true) = { 
+      isCat = true) = {
     name: name,
     ...
   }
   ```
 
 ### <a name='defining-methods'>Defining Methods</a>
+
 - Method definitions follow the same syntactic style as class definitions.
 - Methods defined within a class should always be defined with `::`, as they fail to render with `:`.
 - Methods which return single values (rather than a dictionary) should use parentheses `()` to enclose their bodies if they are multi-line, identically to how braces would be used.
@@ -174,7 +182,9 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
   ```
 
 ### <a name='using-classes'>Using Classes</a>
+
 - Import all dependencies at the top of the file and given them names related to the imported file itself. This makes it easy to see what other files you depend on as the file grows.
+
   ```
   // CORRECT
   local animalTemplate = import "animal.jsonnet.TEMPLATE";
@@ -183,7 +193,9 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
   // AVOID
   (import "animal.jsonnet.TEMPLATE").newAnimal("Finnegan, 3)
   ```
+
 - Prefer using named parameters, one per line, when constructing classes or invoking methods, especially when they wrap beyond one line:
+
   ```
   // PREFERRED
   animalTemplate.newAnimal(
@@ -196,6 +208,7 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
   ```
 
 ### <a name='file-structure'>File Structure</a>
+
 - Jsonnet files which can be materialized with no further inputs should end with the ".jsonnet" suffix.
 - Jsonnet files which requires parameters to be materialized or which are libraries should end with the ".jsonnet.TEMPLATE" suffix.
 - Structuring libraries and imports is not a solved problem, so use your best judgement. In general if you have one common template and many individual instantiations, a workable pattern is:
@@ -208,15 +221,14 @@ Use `jsonnet fmt` to format files. This will fix basic style errors.
 ### <a name='doc'>Documentation Style</a>
 
 - Use `//` for comments.
-- Document parameters using a description, `@param`, and `@returns` similar to JavaDoc: 
+- Document parameters using a description, `@param`, and `@returns` similar to JavaDoc:
   ```
-  // Multicellular, eukaryotic organism of the kingdom Animalia 
+  // Multicellular, eukaryotic organism of the kingdom Animalia
   // @param name Name by which this animal may be called.
   // @param age Number of years (rounded to nearest int) animal has been alive.
-  local Animal(name, age) = { ... } 
+  local Animal(name, age) = { ... }
   ```
 - Always put documentation at the top of each jsonnet file or template to indicate its purpose.
-
 
 ## <a name='best-practices'>Best Practices</a>
 
@@ -260,7 +272,7 @@ For a more complete example, see the [examples](/examples/databricks/shard-v2) a
 
 Use this pattern as far as it will get you. Avoid implementing further abstractions and avoid default parameters for as long as possible. Keeping the number of abstractions low usually makes templates easier to understand. Avoiding default parameters means you have to explicitly choose a value in every situation (reducing corretness bugs).
 
-On the flip side, new additions may require significant mechanial work due to repition. Templates __do not have to be DRY__ (don't repeat yourself) because they are fully materialized at commit time, so correctness issues of repetitiveness are reduced and readability is more important. Use your best judgement when deciding when to build out a new abstraction to avoid repetition.
+On the flip side, new additions may require significant mechanial work due to repition. Templates **do not have to be DRY** (don't repeat yourself) because they are fully materialized at commit time, so correctness issues of repetitiveness are reduced and readability is more important. Use your best judgement when deciding when to build out a new abstraction to avoid repetition.
 
 ### <a name='parameter-objects'>Parameter Objects</a>
 
@@ -278,7 +290,7 @@ local newUsersDatabase(awsVpcParams, instanceSize, highAvailability) = {
 
 local newFrontendVirtualMachine(awsVpcParams, instanceName) = {
   ...
-} 
+}
 ```
 
 ### <a name='overriding-fields'>Overriding and Inserting Fields</a>
@@ -307,7 +319,6 @@ local myCatParams = protoCat + {
   catYears: 28,
 };
 local myCat = animalTemplate.newAnimal(myCatParams)
-``` 
+```
 
 This pattern ensures that inputs and outputs are fully determined by the code within Animal, rather than split between Animal and callers.
-
